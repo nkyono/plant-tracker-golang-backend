@@ -2,3 +2,9 @@ Golang backend
 go run plant-router
 
 pulls data from AWS dynamoDB
+handles HTTP request and returns json of plants species and plant occurrences
+handles different paths ../species.. || ../occurrences..
+handles query strings for occurrenes 
+    -> plantid
+    -> date to & from
+    -> accuracy
