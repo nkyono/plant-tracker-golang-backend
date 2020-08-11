@@ -1,0 +1,4 @@
+Golang backend
+go run plant-router
+
+pulls data from AWS dynamoDB
