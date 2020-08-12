@@ -40,11 +40,17 @@ type App struct {
 
 // OccurrencesHandler represents the part of URL that specifies that we are getting the occurrences
 type OccurrencesHandler struct {
-	AwsConnection *dynamodb.DynamoDB
+	OccurrenceHandler *OccurrenceHandler
+	AwsConnection     *dynamodb.DynamoDB
 }
 
 // SpeciesHandler represents the part of URL that specifies the species
 type SpeciesHandler struct {
+	AwsConnection *dynamodb.DynamoDB
+}
+
+// OccurrenceHandler represents the part of URL that deals with a specific occurrence
+type OccurrenceHandler struct {
 	AwsConnection *dynamodb.DynamoDB
 }
 
@@ -130,18 +136,17 @@ func checkValid(species []Plants.PlantInfo, id string) bool {
 func (handler *OccurrencesHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	// var head string
 	_, req.URL.Path = ShiftPath(req.URL.Path)
-
-	if next, _ := ShiftPath(req.URL.Path); next != "" {
-		http.Error(res, "Not Found", http.StatusNotFound)
-		return
-	}
-
 	// fmt.Printf("%v\n", req.URL.Query())
 	// fmt.Printf("OccurrencesHandler Handling: %s\n", head)
 
 	switch req.Method {
 	case "GET":
 		//fmt.Fprintf(res, "Occurrences\n")
+		if next, _ := ShiftPath(req.URL.Path); next != "" {
+			http.Error(res, "Not Found", http.StatusNotFound)
+			return
+		}
+
 		occurrences, _, err := Plants.GetOccurrences(handler.AwsConnection, req.URL.Query())
 
 		if err != nil {
@@ -166,9 +171,35 @@ func (handler *OccurrencesHandler) ServeHTTP(res http.ResponseWriter, req *http.
 		res.Header().Set("Content-Type", "application/json")
 		res.Write(resBody)
 	case "POST":
-		http.Error(res, "POST not implemented", http.StatusMethodNotAllowed)
+		handler.OccurrenceHandler = new(OccurrenceHandler)
+		handler.OccurrenceHandler.AwsConnection = handler.AwsConnection
+		handler.OccurrenceHandler.ServeHTTP(res, req)
 	default:
 		http.Error(res, "Only GET and POST are allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (handler *OccurrenceHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	var head string
+	head, req.URL.Path = ShiftPath(req.URL.Path)
+
+	if head != "" {
+		http.Error(res, "Not Found", http.StatusNotFound)
+		return
+	}
+
+	var occur Plants.OccurrenceInfo
+
+	err1 := json.NewDecoder(req.Body).Decode(&occur)
+	if err1 != nil {
+		http.Error(res, err1.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err2 := Plants.AddItem(handler.AwsConnection, occur)
+	if err2 != nil {
+		http.Error(res, err2.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
