@@ -279,12 +279,15 @@ func getItems() []OccurrenceInfo {
 }
 
 func addItems(svc *dynamodb.DynamoDB) {
+	// get items from json file
 	items := getItems()
+	// get number of items from database
 	vals := make(map[string][]string)
 	vals["id"] = []string{"-1"}
 	_, numItems, _ := GetOccurrences(svc, vals)
 	tableName := "Occurrences"
 
+	// add new items
 	for _, item := range items {
 		item.OccurrenceID = item.OccurrenceID + numItems
 
