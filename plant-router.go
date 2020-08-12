@@ -57,8 +57,7 @@ func (handler *App) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	var head string
 	head, _ = ShiftPath(req.URL.Path)
 
-	fmt.Println("server: hello handler started")
-	fmt.Printf("Handling: %s\n", head)
+	//fmt.Printf("Handling: %s\n", head)
 
 	switch head {
 	case "species":
@@ -73,42 +72,49 @@ func (handler *App) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 func (handler *SpeciesHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	var head string
-	head, req.URL.Path = ShiftPath(req.URL.Path)
-	fmt.Printf("SpeciesHandler Handling: %s\n", head)
+	// var head string
+	_, req.URL.Path = ShiftPath(req.URL.Path)
+
+	// fmt.Printf("SpeciesHandler Handling: %s\n", head)
 
 	// there should be a mapping of plant species/plant ids
 	// i feel like the mapping should be stored elsewhere so that its not recomputed
 	// species is a list of plantInfo struct
 
-	if next, _ := ShiftPath(req.URL.Path); next != "" {
-		http.Error(res, "Not Found", http.StatusNotFound)
-		return
-	}
-
-	species, _, err := Plants.GetPlants(handler.AwsConnection, req.URL.Query())
-
-	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	type Species []Plants.PlantInfo
-	var body Species = *species
-	/*
-		for _, item := range *species {
-			fmt.Fprintf(res, "%+v\n", item)
+	switch req.Method {
+	case "GET":
+		if next, _ := ShiftPath(req.URL.Path); next != "" {
+			http.Error(res, "Not Found", http.StatusNotFound)
+			return
 		}
-	*/
-	resBody, err := json.Marshal(body)
-	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-		return
+
+		species, _, err := Plants.GetPlants(handler.AwsConnection, req.URL.Query())
+
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		type Species []Plants.PlantInfo
+		var body Species = *species
+		/*
+			for _, item := range *species {
+				fmt.Fprintf(res, "%+v\n", item)
+			}
+		*/
+		resBody, err := json.Marshal(body)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		res.Header().Set("Content-Type", "application/json")
+		res.Write(resBody)
+	case "POST":
+		http.Error(res, "POST not implemented", http.StatusMethodNotAllowed)
+	default:
+		http.Error(res, "Only GET and POST are allowed", http.StatusMethodNotAllowed)
 	}
-
-	res.Header().Set("Content-Type", "application/json")
-	res.Write(resBody)
-
 }
 
 func checkValid(species []Plants.PlantInfo, id string) bool {
@@ -122,40 +128,48 @@ func checkValid(species []Plants.PlantInfo, id string) bool {
 
 // ServeHTTP takes in the database connection and plant id then handles the .../occurrences/.. path
 func (handler *OccurrencesHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	var head string
-	head, req.URL.Path = ShiftPath(req.URL.Path)
+	// var head string
+	_, req.URL.Path = ShiftPath(req.URL.Path)
+
 	if next, _ := ShiftPath(req.URL.Path); next != "" {
 		http.Error(res, "Not Found", http.StatusNotFound)
 		return
 	}
 
-	fmt.Printf("%v\n", req.URL.Query())
-	fmt.Printf("OccurrencesHandler Handling: %s\n", head)
+	// fmt.Printf("%v\n", req.URL.Query())
+	// fmt.Printf("OccurrencesHandler Handling: %s\n", head)
 
-	//fmt.Fprintf(res, "Occurrences\n")
-	occurrences, _, err := Plants.GetOccurrences(handler.AwsConnection, req.URL.Query())
+	switch req.Method {
+	case "GET":
+		//fmt.Fprintf(res, "Occurrences\n")
+		occurrences, _, err := Plants.GetOccurrences(handler.AwsConnection, req.URL.Query())
 
-	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	/*
-		for _, item := range *occurrences {
-			fmt.Fprintf(res, "%+v\n", item)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
 		}
-	*/
-	type Occurrences []Plants.OccurrenceInfo
-	var body Occurrences = *occurrences
 
-	resBody, err := json.Marshal(body)
-	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-		return
+		/*
+			for _, item := range *occurrences {
+				fmt.Fprintf(res, "%+v\n", item)
+			}
+		*/
+		type Occurrences []Plants.OccurrenceInfo
+		var body Occurrences = *occurrences
+
+		resBody, err := json.Marshal(body)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		res.Header().Set("Content-Type", "application/json")
+		res.Write(resBody)
+	case "POST":
+		http.Error(res, "POST not implemented", http.StatusMethodNotAllowed)
+	default:
+		http.Error(res, "Only GET and POST are allowed", http.StatusMethodNotAllowed)
 	}
-
-	res.Header().Set("Content-Type", "application/json")
-	res.Write(resBody)
 }
 
 // struct used for storing credentials

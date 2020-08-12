@@ -332,6 +332,10 @@ func addItems(svc *dynamodb.DynamoDB) {
 	}
 }
 
+func addItem() {
+
+}
+
 // struct used for storing credentials
 /*
 type awsCreds struct {
