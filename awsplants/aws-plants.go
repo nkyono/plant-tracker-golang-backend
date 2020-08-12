@@ -246,7 +246,7 @@ func GetOccurrences(svc *dynamodb.DynamoDB, vals map[string][]string) (*[]Occurr
 			fmt.Println(err.Error())
 			return nil, -1, err
 		}
-		if item.Accuracy > acc && item.Date > dateFrom.Format("2006-01-02") && item.Date < dateTo.Format("2006-01-02") {
+		if item.Accuracy >= acc && item.Date >= dateFrom.Format("2006-01-02") && item.Date <= dateTo.Format("2006-01-02") {
 			numItems++
 			resultItems = append(resultItems, item)
 		}
@@ -332,8 +332,41 @@ func addItems(svc *dynamodb.DynamoDB) {
 	}
 }
 
-func addItem() {
+// AddItem is a function that adds singular occurrence to database. Item is passed in via parameter. returns nil on success or error on failure
+func AddItem(svc *dynamodb.DynamoDB, item OccurrenceInfo) error {
+	tableName := "Occurrences"
 
+	time.Sleep(time.Nanosecond * 1)
+	sha := sha1.New()
+
+	sha.Write([]byte(fmt.Sprintf("%d", time.Now().UnixNano())))
+	s := sha.Sum(nil)
+	hs := fmt.Sprintf("%x", s)
+
+	item.OccurrenceID = hs
+
+	item.Date = time.Now().Format("2006-01-02")
+
+	av, err := dynamodbattribute.MarshalMap(item)
+	if err != nil {
+		fmt.Println("Got error marshalling map:")
+		fmt.Println(err.Error())
+		return err
+	}
+
+	// Create item in table Movies
+	input := &dynamodb.PutItemInput{
+		Item:      av,
+		TableName: aws.String(tableName),
+	}
+
+	_, err = svc.PutItem(input)
+	if err != nil {
+		fmt.Println("Got error calling PutItem:")
+		fmt.Println(err.Error())
+		return err
+	}
+	return nil
 }
 
 // struct used for storing credentials
