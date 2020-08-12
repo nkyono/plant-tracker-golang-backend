@@ -1,8 +1,9 @@
 package awsplants
 
-// package main
+//package main
 
 import (
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -26,7 +27,7 @@ type PlantInfo struct {
 
 // OccurrenceInfo contains information about occurrences. OccurrenceID is primary; PlantID is sort
 type OccurrenceInfo struct {
-	OccurrenceID int
+	OccurrenceID string
 	Date         string
 	Accuracy     float64
 	Latitude     float64
@@ -284,12 +285,19 @@ func addItems(svc *dynamodb.DynamoDB) {
 	// get number of items from database
 	vals := make(map[string][]string)
 	vals["id"] = []string{"-1"}
-	_, numItems, _ := GetOccurrences(svc, vals)
+	// _, numItems, _ := GetOccurrences(svc, vals)
 	tableName := "Occurrences"
 
 	// add new items
 	for _, item := range items {
-		item.OccurrenceID = item.OccurrenceID + numItems
+		time.Sleep(time.Nanosecond * 1)
+		sha := sha1.New()
+
+		sha.Write([]byte(fmt.Sprintf("%d", time.Now().UnixNano())))
+		s := sha.Sum(nil)
+		hs := fmt.Sprintf("%x", s)
+
+		item.OccurrenceID = hs
 
 		s1 := rand.NewSource(time.Now().UnixNano() + 30)
 		r1 := rand.New(s1)
@@ -320,7 +328,7 @@ func addItems(svc *dynamodb.DynamoDB) {
 			os.Exit(1)
 		}
 
-		fmt.Println("Successfully added " + strconv.Itoa(item.OccurrenceID) + " to table " + tableName)
+		fmt.Println("Successfully added " + item.OccurrenceID + " to table " + tableName)
 	}
 }
 
@@ -354,8 +362,8 @@ func main() {
 	}))
 	svc := dynamodb.New(mySession)
 
-	// addItems(svc)
-	GetPlants(svc)
-	GetOccurrences(svc, 1)
+	addItems(svc)
+	// GetPlants(svc)
+	// GetOccurrences(svc, 1)
 }
 */
