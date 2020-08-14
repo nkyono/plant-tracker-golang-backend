@@ -345,7 +345,15 @@ func AddItem(svc *dynamodb.DynamoDB, item OccurrenceInfo) error {
 
 	item.OccurrenceID = hs
 
-	item.Date = time.Now().Format("2006-01-02")
+	_, err := time.Parse("2006-01-02", item.Date)
+	if err != nil {
+		fmt.Println("Got error with date:")
+		fmt.Println(err.Error())
+		return err
+	}
+
+	// just in case I decide to just default to using todays date
+	// item.Date = time.Now().Format("2006-01-02")
 
 	av, err := dynamodbattribute.MarshalMap(item)
 	if err != nil {
