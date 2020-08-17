@@ -8,3 +8,11 @@ handles query strings for occurrenes
     -> plantid
     -> date to & from
     -> accuracy
+
+Current access points
+GetPlants: retreives all the plant species from the database
+GetOccurrences: retrieves all the occurrences from the database. main filter on plantID, then date and accuracy filtered later
+AddItem: adds a singular item to the database. also creates the occurrenceID using sha1 on current time.
+(In future addItem will potentially be where the machine learning model will identify plant and accuracy.)
+
+AddItems: Not accessible. Used to fill database with fake testing data

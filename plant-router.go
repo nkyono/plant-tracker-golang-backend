@@ -191,6 +191,7 @@ func (handler *OccurrenceHandler) ServeHTTP(res http.ResponseWriter, req *http.R
 	var occur Plants.OccurrenceInfo
 
 	err1 := json.NewDecoder(req.Body).Decode(&occur)
+	fmt.Printf("%+v\n", occur)
 	if err1 != nil {
 		http.Error(res, err1.Error(), http.StatusBadRequest)
 		return
